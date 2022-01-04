@@ -15,10 +15,10 @@ cargo build
 cl.exe /Zi src\main.cc embed-lib\target\debug\embed.lib
 ```
 
-#### Compile with clang on MacOS X 
+#### Compile with clang on MacOS X (c++17: nullptr) 
 
 ```bash
-g++ -g src/main.cc embed-lib/target/debug/embed.lib -pthread -ldl
+clang++ -g -std=c++17 src/main.cc embed-lib/target/debug/libembed.a -pthread -ldl
 ```
 
 #### Compile with gcc on Linux 
