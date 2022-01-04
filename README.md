@@ -1,4 +1,4 @@
-### playing with C callbacks in Rust
+# Playing with C/C++ callbacks in Rust
 
 ### How to compile ?
 
