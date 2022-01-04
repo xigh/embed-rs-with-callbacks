@@ -1,0 +1,6 @@
+embed-lib/target
+embed-lib/Cargo.lock
+/*.obj
+/*.pdb
+/*.exe
+/a.out
