@@ -1,8 +1,8 @@
 ### playing with C callbacks in Rust
 
-### how to compile ?
+### How to compile ?
 
-First build embed-lib:
+#### Build embed-lib rust library:
 
 ```bash
 cd embed-lib
