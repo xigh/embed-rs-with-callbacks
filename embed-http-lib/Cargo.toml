@@ -1,0 +1,16 @@
+[package]
+name = "embed-http-lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2.112"
+hyper = { version="0.14.16", features = ["http1", "http2", "client", "runtime" ] }
+tokio = { version = "1.15.0", features = ["rt-multi-thread"] }
+
+[lib]
+name = "embedhttp"
+crate-type = [
+    "dylib",        # .dll, .so, .dynlib
+    "staticlib"     # .lib, .a
+]
