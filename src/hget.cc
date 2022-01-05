@@ -4,6 +4,17 @@
 #include <mutex>
 #include <condition_variable>
 
+// Compile with VS2019 command prompt
+// cl /Zi src/hget.cc embed-http-lib/target/debug/embedhttp.lib
+
+#ifdef _WIN32
+#pragma comment(lib, "ws2_32")
+#pragma comment(lib, "bcrypt")
+#pragma comment(lib, "userenv")
+#pragma comment(lib, "advapi32")
+#pragma comment(lib, "ntdll")
+#endif
+
 // waitgroup: thank you golang
 class waitgroup {
     std::mutex mutex;
@@ -33,27 +44,13 @@ public:
     }
 };
 
-// Compile with VS2019 command prompt
-// cl /Zi src/hget.cc embed-http-lib/target/debug/embedhttp.lib
-
-extern "C" void hget(const char *name, void (*cb)(const char *msg), bool wait);
-
-#ifdef _WIN32
-#pragma comment(lib, "ws2_32")
-#pragma comment(lib, "bcrypt")
-#pragma comment(lib, "userenv")
-#pragma comment(lib, "advapi32")
-#pragma comment(lib, "ntdll")
-#endif
-
 auto wait = false;
 waitgroup wg;
 
-// hget(arg.c_str(), hget_cb, wait);
-extern "C" void hget_cb(const char *msg)
+extern "C" void hget(const char *name, void (*cb)(const char *res), bool wait);
+extern "C" void hget_cb(const char *res)
 {
-    std::string s = msg;
-    std::cout << "cb: " << s << std::endl;
+    std::cout << "cb: res=" << res << std::endl;
     if (!wait) wg.done();
 }
 
