@@ -82,8 +82,10 @@ extern "C" void hget(const char *name, hget_cb_t cb, bool wait);
 // C++ asynchronous callback
 extern "C" void hget_cb(const hget_res_t *res, const hget_err_t *err)
 {
-    if (res)
-        std::cout << "cb: res=" << res->body << std::endl;
+    if (res) {
+        std::cout << "cb: status=" << res->status << std::endl;
+        std::cout << "    body=" << res->body << std::endl;
+    }
     if (err)
         std::cout << "cb: err=" << err->body << std::endl;
     if (!wait)
