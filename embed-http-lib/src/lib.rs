@@ -1,18 +1,28 @@
-use libc::{c_int, c_char};
+use tokio::runtime::Runtime;
+
+use libc::{c_char, c_int};
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::ptr::NonNull;
 
-type FooCallback = unsafe extern "C" fn(msg: *const c_char);
-
 mod get;
-use get::http_get;
-mod sleep;
+use get::{http_get, GetErrorImpl, GetResultImpl};
 
-use tokio::runtime::Runtime;
+#[repr(C)]
+pub struct GetResult {
+    status: c_int,
+    body: *const c_char,
+}
+
+#[repr(C)]
+pub struct GetError {
+    status: c_int,
+    body: *const c_char,
+}
+pub type GetCallback = unsafe extern "C" fn(msg: *const GetResult, err: *const GetError);
 
 #[no_mangle]
-pub extern "C" fn hget(url: Option<NonNull<c_char>>, cb: Option<FooCallback>, wait: c_int) {
+pub extern "C" fn hget(url: Option<NonNull<c_char>>, cb: Option<GetCallback>, wait: c_int) {
     let wait: bool = wait != 0;
     if let None = cb {
         log::error!("hget: cb is null");
@@ -43,10 +53,35 @@ pub extern "C" fn hget(url: Option<NonNull<c_char>>, cb: Option<FooCallback>, wa
             let url = url.to_str();
             let url = url.unwrap();
             log::debug!("hget: calling http_get with {:#?}", url);
-            http_get(url, |msg: &CString| { 
-                let s = msg.as_ptr();
-                unsafe { cb(s); }
-            }).await;
+            http_get(
+                url,
+                |res: Option<&GetResultImpl>, err: Option<&GetErrorImpl>| {
+                    let (tmp1, tmp2);
+                    unsafe {
+                        cb(
+                            if let Some(res) = res {
+                                tmp1 = CString::new(res.body.as_str()).unwrap();
+                                &GetResult {
+                                    status: res.status,
+                                    body: tmp1.as_ptr(),
+                                }
+                            } else {
+                                std::ptr::null()
+                            },
+                            if let Some(err) = err {
+                                tmp2 = CString::new(err.body.as_str()).unwrap();
+                                &GetError {
+                                    status: err.status,
+                                    body: tmp2.as_ptr(),
+                                }
+                            } else {
+                                std::ptr::null()
+                            },
+                        );
+                    }
+                },
+            )
+            .await;
             log::debug!("hget: http_get returned");
         });
         log::debug!("hget: block_on finished");

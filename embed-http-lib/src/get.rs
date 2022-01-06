@@ -1,9 +1,18 @@
 use hyper::{Client, Uri, Method, Request, Body};
-use std::ffi::CString;
 use hyper_tls::HttpsConnector;
 use http::uri::Scheme;
 
-pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
+pub struct GetResultImpl {
+    pub status: i32,
+    pub body: String,
+}
+
+pub struct GetErrorImpl {
+    pub status: i32,
+    pub body: String,
+}
+
+pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(Option<&GetResultImpl>, Option<&GetErrorImpl>)) {
     let url = url.into();
     let url = Uri::try_from(url);
     if let Err(err) = url {
@@ -36,11 +45,14 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
         Client::new()
             .request(req)
     };
-    let s = match response.await {
-        Ok(res) => format!("{:#?}", res),
-        Err(err) => format!("http_get: Error: {}", err),
+    match response.await {
+        Ok(res) => cb(Some(&GetResultImpl{
+            status: res.status().as_u16() as i32,
+            body: format!("{:#?}", res),
+        }), None),
+        Err(err) => cb(None, Some(&GetErrorImpl{
+            status: 0,
+            body: format!("{}", err),
+        })),
     };
-    let s = s.as_str();
-    let cs = CString::new(s).unwrap(); // todo
-    cb(&cs);
 }
