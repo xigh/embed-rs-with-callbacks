@@ -15,41 +15,41 @@ use tokio::runtime::Runtime;
 pub extern "C" fn hget(url: Option<NonNull<c_char>>, cb: Option<FooCallback>, wait: c_int) {
     let wait: bool = wait != 0;
     if let None = cb {
-        eprintln!("hget: cb is null");
+        log::error!("hget: cb is null");
         return;
     }
     let cb = cb.unwrap();
     if let None = url {
-        eprintln!("hget: url is null");
+        log::error!("hget: url is null");
         return;
     }
     let url = url.unwrap().as_ptr();
-    println!("hget: url at {:?}", url);
+    log::debug!("hget: url at {:?}", url);
     let url = unsafe { CStr::from_ptr(url) };
     let url = CString::from(url); // this makes a safe copy of the buffer !!!
-    println!("hget: cstring::url={:?}", url);
+    log::debug!("hget: cstring::url={:?}", url);
 
     let get_fn = move || {
         let rt = Runtime::new();
         if let Err(err) = rt {
-            eprintln!("hget: could not create tokio runtime: {}", err);
+            log::error!("hget: could not create tokio runtime: {}", err);
             return;
         }
         let rt = rt.unwrap();
 
-        println!("hget: block_on");
+        log::debug!("hget: block_on");
         rt.block_on(async move {
-            println!("hget: cstr::url at {:?}", url.as_ptr());
+            log::debug!("hget: cstr::url at {:?}", url.as_ptr());
             let url = url.to_str();
             let url = url.unwrap();
-            println!("hget: calling http_get with {:#?}", url);
+            log::debug!("hget: calling http_get with {:#?}", url);
             http_get(url, |msg: &CString| { 
                 let s = msg.as_ptr();
                 unsafe { cb(s); }
             }).await;
-            println!("hget: http_get returned");
+            log::debug!("hget: http_get returned");
         });
-        println!("hget: block_on finished");
+        log::debug!("hget: block_on finished");
     };
 
     if wait {

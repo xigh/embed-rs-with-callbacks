@@ -7,12 +7,12 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
     let url = url.into();
     let url = Uri::try_from(url);
     if let Err(err) = url {
-        eprintln!("http_get: could not parse url: {}", err);
+        log::error!("http_get: could not parse url: {}", err);
         return;
     }
     let uri: Uri = url.unwrap();
     let scheme = uri.scheme();
-    println!("http_get: uri={}", uri);
+    log::debug!("http_get: uri={}", uri);
 
     let req = Request::builder()
         .method(Method::GET)
@@ -21,12 +21,12 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
         .body(Body::from(""))
         ;
     if let Err(err) = req {
-        eprintln!("http_get: could not create request: {}", err);
+        log::error!("http_get: could not create request: {}", err);
         return;
     }
     let req = req.unwrap();    
 
-    println!("http_get: waiting {:#?}", req);
+    log::debug!("http_get: waiting {:#?}", req);
     let response = if scheme == Some(&Scheme::HTTPS) {
         let https = HttpsConnector::new();
         Client::builder()
@@ -37,7 +37,7 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
             .request(req)
     };
     let s = match response.await {
-        Ok(res) => format!("http_get: Response: {:?}", res),
+        Ok(res) => format!("{:#?}", res),
         Err(err) => format!("http_get: Error: {}", err),
     };
     let s = s.as_str();
