@@ -1,5 +1,7 @@
 use hyper::{Client, Uri, Method, Request, Body};
 use std::ffi::CString;
+use hyper_tls::HttpsConnector;
+use http::uri::Scheme;
 
 pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
     let url = url.into();
@@ -9,12 +11,12 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
         return;
     }
     let uri: Uri = url.unwrap();
+    let scheme = uri.scheme();
     println!("http_get: uri={}", uri);
 
-    let client = Client::new();
     let req = Request::builder()
         .method(Method::GET)
-        .uri(uri)
+        .uri(&uri)
         .header("Accept", "text/html")
         .body(Body::from(""))
         ;
@@ -25,7 +27,16 @@ pub async fn http_get<S: Into<String>>(url: S, cb: impl Fn(&CString)) {
     let req = req.unwrap();    
 
     println!("http_get: waiting {:#?}", req);
-    let s = match client.request(req).await {
+    let response = if scheme == Some(&Scheme::HTTPS) {
+        let https = HttpsConnector::new();
+        Client::builder()
+            .build::<_, hyper::Body>(https)
+            .request(req)
+    } else {
+        Client::new()
+            .request(req)
+    };
+    let s = match response.await {
         Ok(res) => format!("http_get: Response: {:?}", res),
         Err(err) => format!("http_get: Error: {}", err),
     };

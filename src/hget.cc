@@ -5,9 +5,12 @@
 #include <condition_variable>
 
 // Compile with VS2019 command prompt
-// cl /Zi src/hget.cc embed-http-lib/target/debug/embedhttp.lib
+// cl /EHsc /Zi src/hget.cc embed-http-lib/target/debug/embedhttp.lib
 
 #ifdef _WIN32
+#pragma comment(lib, "ncrypt") // hyper-tls
+#pragma comment(lib, "crypt32") // hyper-tls
+#pragma comment(lib, "secur32") // hyper-tls
 #pragma comment(lib, "ws2_32")
 #pragma comment(lib, "bcrypt")
 #pragma comment(lib, "userenv")
@@ -47,7 +50,10 @@ public:
 auto wait = false;
 waitgroup wg;
 
+// Rust exported function
 extern "C" void hget(const char *name, void (*cb)(const char *res), bool wait);
+
+// C++ asynchronous callback
 extern "C" void hget_cb(const char *res)
 {
     std::cout << "cb: res=" << res << std::endl;
